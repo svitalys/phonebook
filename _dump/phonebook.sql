@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost:3306
--- Время создания: Окт 29 2024 г., 04:42
+-- Время создания: Окт 29 2024 г., 06:54
 -- Версия сервера: 5.7.33
 -- Версия PHP: 8.1.8
 
@@ -50,7 +50,8 @@ INSERT INTO `data` (`id`, `name`, `phone`) VALUES
 -- Индексы таблицы `data`
 --
 ALTER TABLE `data`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `phone` (`phone`);
 
 --
 -- AUTO_INCREMENT для сохранённых таблиц
