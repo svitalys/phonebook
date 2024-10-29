@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Телефонная записная книжка</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+</head>
+<body class="d-flex flex-column h-100">
+
+	<header class="p-3 bg-dark text-white">
+		<div class="container">
+			<div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+
+			</div>
+		</div>
+	</header>
+	
+    <div class="container">
+        <div id="app">
+            <div class="form">
+                <div style="margin-top: 20px"><p class="h4">Форма <span :class="check_online()">онлайн</span></p> </div>
+                <div class="form-row">
+                    <div class="col-md-5 mb-3">
+                        <label>Имя</label>
+                        <input type="text" class="form-control" :class="{'is-valid': form_name !== ''}" v-model="form_name" required>
+
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <label>Номер телефона:</label>
+                        <input type="text" class="form-control" :class="check_valid_phone()" v-model="form_phone" required>
+                        <div class="invalid-feedback" v-if="check_valid_phone() == 'is-invalid'"> Этот номер уже используется</div>
+                    </div>
+                    <div class="col-md-2 mb-3 d-flex flex-column">
+                      
+                        <button class="btn btn-success mt-auto" v-if="check_valid_phone() !== 'is-invalid' && form_name !== '' && form_phone !== '' " @click="save_item()">Сохранить</button>
+                        <button class="btn btn-secondary mt-auto is-invalid" v-if="check_valid_phone() == 'is-invalid' ||  form_name == '' || form_phone == '' ">Нельзя сохранить</button>
+                        <div class="invalid-feedback w-100" v-if="check_valid_phone() == 'is-invalid' "> Ошибка </div>
+                    </div>
+                </div>
+            </div>
+            <div class="search form-row"> 
+                <div class="col-md-12 mb-3">
+                    <label class="h4">Поиск по номеру телефона:</label>
+                    <input type="text" class="form-control" v-model="search_phone" required>
+                </div>
+            </div>
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>                                
+                        <th scope="col">id:</th>                                
+                        <th scope="col">Имя:</th>
+                        <th scope="col">Телефон:</th>
+                        <th scope="col">Действия:</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,index) in table" v-if="table.length > 0" :class="{'table-success': item.phone == search_phone}">
+                        <td>{{index+1}}</td>
+                        <td>{{item.id}}</td>
+                        <td>{{item.name}}</td>
+                        <td>{{item.phone}}</td>
+                        <td>
+                            <a href="#edit" @click="edit_item(index, item.id)" class="btn btn-sm btn-info">Редактировать</a>
+                            <a href="#delete" @click="delete_item(index, item.id)" class="btn btn-sm btn-danger">Удалить</a>
+                        </td>
+                    </tr>
+                    <tr v-if="!table.length">
+                        <td colspan="4">Данные еще не добавлены</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>        
+    </div>
+
+	<nav class="navbar fixed-bottom navbar-light bg-light">
+		<div class="container">
+			<div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+			© Студия 24, 2024г - Записная книжка
+			</div>
+		</div>
+	</nav>
+	
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+	
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                form_id: false,
+                edit_id: false,
+                form_phone: '',
+                form_name: '',
+                search_phone: '',
+				used_local: false,
+				loading: false,
+                table: []
+            },
+            computed: {
+                
+            },
+            methods: { 
+                check_online: function(){
+					if(this.used_local == true)
+						return 'badge badge-danger';
+					else
+						return 'badge badge-success';
+				},                				
+                check_valid_phone: function(){        
+                    if(this.form_phone == ''){ return ''; }
+                    if(this.form_id !== false){
+                      if(this.table.map(function(e) { return e.phone; }).indexOf(this.form_phone) > 0 ){
+                         if(this.table.map(function(e) { return e.phone; }).indexOf(this.form_phone) == this.form_id){ return 'is-valid'; }else{ return 'is-invalid';}
+                      }else{
+                         return 'is-valid';
+                      }                       
+                    }else{
+                        if(this.table.map(function(e) { return e.phone; }).indexOf(this.form_phone) < 0 ){ return 'is-valid'; } else { return 'is-invalid';}
+                    }
+                },                
+                update_localStorage: function(){
+                    this.form_id = false;
+                    this.edit_id = false;
+                    this.form_name = '';
+                    this.form_phone = '';
+                    localStorage.setItem("table", JSON.stringify(this.table));
+                },
+                save_item: function(){
+                    let update_date = true;
+                    console.log(this);
+                    if(this.form_id !== false)
+					{
+                        if(app.table.map(function(e) { return e.phone; }).indexOf(app.form_phone) < 0 || app.table.map(function(e) { return e.phone; }).indexOf(app.form_phone) == this.form_id)
+						{
+							if(this.edit_id !== false && this.used_local == false)
+							{
+								axios.get('/ajax.php?action=update&id='+this.edit_id+'&name='+this.form_name+'&phone='+this.form_phone).then(response => {
+									
+									if(response.data.error == true)
+										alert("Ошибка замены данных.");
+										
+								}).catch(error => {console.log(error) }).finally(() => this.loading = false)
+							}
+							
+							this.table[this.form_id].name = this.form_name;
+                            this.table[this.form_id].phone = this.form_phone;
+                        }
+						else
+						{
+                            update_date = false;              
+                        }   
+                    }
+					else{
+                        if(this.table.map(function(e) { return e.phone; }).indexOf(this.form_phone) < 0 )
+						{
+							if(this.used_local == false)
+							{
+								axios.get('/ajax.php?action=add&name='+this.form_name+'&phone='+this.form_phone).then(response => {
+									if(response.data.error == true)
+										alert("Ошибка добавления.");
+									else
+										this.table.push({id: response.data.id, name: response.data.name, phone: response.data.phone});
+
+								}).catch(error => {console.log(error) }).finally(() => this.loading = false)
+							}
+							else
+								this.table.push({name: this.form_name, phone: this.form_phone});
+                        }
+						else
+						{
+                            update_date = false;                           
+                        }  
+                    }
+					
+                    if(update_date){
+                        this.update_localStorage();
+                    }else{
+                        alert("Номер телефон уже используется "+this.table.find( x => x.phone == this.form_phone).name);
+                    }                    
+                },
+                edit_item: function(index, id){      
+                    console.log(this.table[index])          
+                    this.form_id = index;
+                    this.edit_id = id;
+                    this.form_name = this.table[index].name;
+                    this.form_phone = this.table[index].phone;
+
+                },
+                delete_item: function(index, id){
+					
+					if(this.used_local == false)
+					{
+						axios.get('/ajax.php?action=delete&id='+id).then(response => {
+							
+							if(response.error == true)
+								alert("Ошибка удаления.");
+							else
+								this.table.splice(index,1);
+								
+						}).catch(error => {console.log(error) }).finally(() => this.loading = false)
+					}
+					else
+					{
+						this.table.splice(index,1);
+						this.update_localStorage();						
+					}
+                },
+            }, 
+            updated: function() {            
+				
+            },      
+            mounted: function() {
+
+				axios.get('/ajax.php?action=getTable').then(response => {
+					this.table = response.data
+				  })
+				  .catch(error => {
+					console.log(error)
+					this.used_local = true
+					
+					if(JSON.parse(localStorage.getItem("table")).length)
+					{
+						this.table = JSON.parse(localStorage.getItem("table"));
+					}
+				  })
+				  .finally(() => this.loading = false)
+            }
+        });
+    </script>
+	
+</body>
+</html>
