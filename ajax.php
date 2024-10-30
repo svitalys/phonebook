@@ -9,7 +9,7 @@ $db = new Mysql_i($host, $base, $user, $pass);
 
 global $db;
 
-$result = array();
+$result = array("error" => true);
 
 if(isset($_GET["action"]) && $_GET["action"] == "add" )
 {
@@ -18,8 +18,6 @@ if(isset($_GET["action"]) && $_GET["action"] == "add" )
 	
 	if($insert_id = $db->insert("data", array("name" => $name, "phone" => $phone)))
 		$result = array("error" => false, 'id' => $insert_id, 'name' => $name, 'phone' => $phone);
-	else
-		$result = array("error" => true);
 }
 else if(isset($_GET["action"]) && $_GET["action"] == "update" )
 {
@@ -29,15 +27,11 @@ else if(isset($_GET["action"]) && $_GET["action"] == "update" )
 	
 	if($update_id = $db->update("data", array("name" => $name, "phone" => $phone), array("id" => $id)))
 		$result = array("error" => false, 'id' => $update_id);
-	else
-		$result = array("error" => true);
 }
 else if(isset($_GET["action"]) && $_GET["action"] == "delete" )
 {
 	if($db->delete("data", array("id" => $_GET["id"])))
 		$result = array("error" => false);
-	else
-		$result = array("error" => true);
 }
 else if(isset($_GET["action"]) && $_GET["action"] == "getTable")
 {
@@ -45,8 +39,6 @@ else if(isset($_GET["action"]) && $_GET["action"] == "getTable")
 	
 	$result = $data;
 }
-else
-	$result = array("error" => true);
 
 isAjax();
 echo json_encode($result);
